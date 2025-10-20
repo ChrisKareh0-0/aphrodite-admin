@@ -62,7 +62,12 @@ app.use('/favicon.ico', express.static(path.join(__dirname, '../admin-panel/buil
 
 // Database connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/aphrodite')
-  .then(() => console.log('MongoDB connected successfully'))
+  .then(async () => {
+    console.log('MongoDB connected successfully');
+    // Create default admin user if it doesn't exist
+    const { createDefaultAdmin } = await import('./utils/createAdmin.js');
+    await createDefaultAdmin();
+  })
   .catch(err => console.error('MongoDB connection error:', err));
 
 // Import routes

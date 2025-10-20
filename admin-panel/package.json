@@ -1,0 +1,46 @@
+{
+  "name": "aphrodite-admin-panel",
+  "version": "1.0.0",
+  "description": "Admin panel for Aphrodite fashion website",
+  "private": true,
+  "dependencies": {
+    "@headlessui/react": "^1.7.13",
+    "axios": "^1.12.2",
+    "clsx": "^1.2.1",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^12.23.22",
+    "lucide-react": "^0.323.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.43.5",
+    "react-hot-toast": "^2.4.0",
+    "react-query": "^3.39.3",
+    "react-router-dom": "^6.8.1",
+    "react-scripts": "5.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "proxy": "http://localhost:3001"
+}

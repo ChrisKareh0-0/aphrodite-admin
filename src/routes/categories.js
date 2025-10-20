@@ -44,6 +44,10 @@ router.get('/', async (req, res) => {
       .populate('createdBy', 'name email')
       .sort({ sortOrder: 1, name: 1 });
 
+    if (!categories || categories.length === 0) {
+      return res.json({ categories: '', message: 'No categories found' });
+    }
+
     res.json({ categories });
   } catch (error) {
     console.error('Get categories error:', error);

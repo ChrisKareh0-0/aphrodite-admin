@@ -13,6 +13,9 @@ router.get('/', auth, async (req, res) => {
       .populate('items.product', 'name price images')
       .sort({ createdAt: -1 });
     console.log(`Found ${orders.length} orders`);
+    if (!orders || orders.length === 0) {
+      return res.json({ orders: '', message: 'No orders found' });
+    }
     res.json({ orders });
   } catch (err) {
     console.error('Error fetching orders:', err);

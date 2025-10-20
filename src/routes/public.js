@@ -127,6 +127,9 @@ router.get('/products', [
       isFeatured: product.isFeatured
     }));
 
+    if (!formattedProducts || formattedProducts.length === 0) {
+      return res.json({ products: '', message: 'No products found' });
+    }
     res.json({
       products: formattedProducts,
       pagination: {

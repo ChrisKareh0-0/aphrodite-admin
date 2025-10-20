@@ -1,0 +1,31 @@
+meta {
+  name: Products - Create
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/api/products
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "name": "Summer Dress",
+    "description": "A beautiful summer dress perfect for warm weather",
+    "shortDescription": "Beautiful summer dress",
+    "price": 79.99,
+    "originalPrice": 99.99,
+    "category": "{{categoryId}}",
+    "stock": 50,
+    "sku": "DRESS-SUMMER-001",
+    "colors": "[\"Red\", \"Blue\", \"White\"]",
+    "sizes": "[\"XS\", \"S\", \"M\", \"L\", \"XL\"]",
+    "tags": "[\"summer\", \"casual\", \"dress\"]"
+  }
+}

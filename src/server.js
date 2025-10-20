@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { config } from 'dotenv';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -13,6 +14,20 @@ const __dirname = dirname(__filename);
 config();
 
 const app = express();
+
+// Ensure uploads directories exist to prevent multer failures in production
+const uploadsDirs = ['uploads', 'uploads/categories', 'uploads/hero', 'uploads/collection', 'uploads/products'];
+uploadsDirs.forEach(dir => {
+  const dirPath = path.join(__dirname, '..', dir);
+  try {
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+      console.log(`Created upload directory: ${dirPath}`);
+    }
+  } catch (err) {
+    console.error(`Failed to create upload directory ${dirPath}:`, err);
+  }
+});
 
 // CORS configuration
 const allowedOrigins = [
@@ -106,13 +121,23 @@ app.use((req, res) => {
 });
 
 // Error handling middleware
+// Global error handler - log full stack and request details (helps in production)
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('Global error handler - error:', err);
+  // Include helpful request context in logs when available
+  try {
+    console.error('Request path:', req.path);
+    console.error('Request method:', req.method);
+    console.error('Request headers:', req.headers);
+    console.error('Request body:', req.body);
+  } catch (logErr) {
+    console.error('Error logging request context:', logErr);
+  }
+
   res.status(500).json({
     error: 'Something went wrong!',
     message: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
-  next(err); // Pass error to default Express error handler
 });
 
 const PORT = process.env.PORT || 3001;

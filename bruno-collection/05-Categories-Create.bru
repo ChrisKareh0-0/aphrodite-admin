@@ -1,0 +1,23 @@
+meta {
+  name: Categories - Create
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/categories
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "name": "Dresses",
+    "description": "Beautiful dresses for every occasion",
+    "sortOrder": 1
+  }
+}

@@ -1,0 +1,24 @@
+meta {
+  name: Categories - Update
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{baseUrl}}/api/categories/{{categoryId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "name": "Summer Dresses",
+    "description": "Beautiful summer dresses",
+    "sortOrder": 1,
+    "isActive": true
+  }
+}

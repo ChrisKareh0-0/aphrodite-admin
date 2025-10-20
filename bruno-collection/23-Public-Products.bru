@@ -1,0 +1,16 @@
+meta {
+  name: Public - Products List
+  type: http
+  seq: 23
+}
+
+get {
+  url: {{baseUrl}}/api/public/products?page=1&limit=12
+  body: none
+  auth: none
+}
+
+params:query {
+  page: 1
+  limit: 12
+}

@@ -1,0 +1,11 @@
+meta {
+  name: Public - Product By Slug
+  type: http
+  seq: 24
+}
+
+get {
+  url: {{baseUrl}}/api/public/products/{{productSlug}}
+  body: none
+  auth: none
+}

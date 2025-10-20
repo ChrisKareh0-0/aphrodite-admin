@@ -20,7 +20,6 @@ const settingsSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Create indexes
-settingsSchema.index({ key: 1 });
+// 'key' already has unique: true set in the schema; additional index is redundant
 
 export default mongoose.model('Settings', settingsSchema);

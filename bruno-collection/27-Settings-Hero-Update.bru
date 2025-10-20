@@ -1,0 +1,25 @@
+meta {
+  name: Settings - Update Hero Text
+  type: http
+  seq: 27
+}
+
+put {
+  url: {{baseUrl}}/api/settings/hero/text
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "title": "NEW SEASON",
+    "heading": "SPRING COLLECTION\n2025",
+    "description": "Discover our latest spring collection with exclusive designs",
+    "buttonText": "Shop Now",
+    "buttonLink": "/shop"
+  }
+}

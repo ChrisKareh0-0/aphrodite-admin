@@ -1,0 +1,25 @@
+meta {
+  name: Products - Update
+  type: http
+  seq: 11
+}
+
+put {
+  url: {{baseUrl}}/api/products/{{productId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "name": "Updated Summer Dress",
+    "price": 69.99,
+    "stock": 100,
+    "isActive": true,
+    "isFeatured": true
+  }
+}

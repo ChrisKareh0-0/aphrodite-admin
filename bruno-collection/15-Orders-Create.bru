@@ -1,0 +1,43 @@
+meta {
+  name: Orders - Create
+  type: http
+  seq: 15
+}
+
+post {
+  url: {{baseUrl}}/api/orders/create
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "customer": {
+      "name": "John Doe",
+      "email": "john@example.com",
+      "phone": "+1234567890",
+      "address": {
+        "street": "123 Main St",
+        "city": "New York",
+        "state": "NY",
+        "zipCode": "10001",
+        "country": "USA"
+      }
+    },
+    "items": [
+      {
+        "product": "{{productId}}",
+        "quantity": 2,
+        "price": 79.99,
+        "color": "Red",
+        "size": "M"
+      }
+    ],
+    "subtotal": 159.98,
+    "shipping": 10.00,
+    "tax": 15.00,
+    "total": 184.98,
+    "paymentMethod": "cash_on_delivery",
+    "notes": "Please deliver after 5 PM"
+  }
+}

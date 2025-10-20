@@ -47,6 +47,13 @@ router.get('/', async (req, res) => {
     res.json({ categories });
   } catch (error) {
     console.error('Get categories error:', error);
+    console.error('Stack:', error.stack);
+    try {
+      const mongoose = await import('mongoose');
+      console.error('Mongoose connection readyState:', mongoose.connection.readyState);
+    } catch (e) {
+      console.error('Could not import mongoose for diagnostics:', e);
+    }
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -66,6 +73,7 @@ router.get('/:id', adminAuth, async (req, res) => {
     res.json({ category });
   } catch (error) {
     console.error('Get category error:', error);
+    console.error('Stack:', error.stack);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -116,6 +124,7 @@ router.post('/', [
     res.status(201).json({ category });
   } catch (error) {
     console.error('Create category error:', error);
+    console.error('Stack:', error.stack);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -171,6 +180,7 @@ router.put('/:id', [
     res.json({ category });
   } catch (error) {
     console.error('Update category error:', error);
+    console.error('Stack:', error.stack);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -198,6 +208,7 @@ router.delete('/:id', adminAuth, async (req, res) => {
     res.json({ message: 'Category deleted successfully' });
   } catch (error) {
     console.error('Delete category error:', error);
+    console.error('Stack:', error.stack);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -221,6 +232,7 @@ router.put('/:id/toggle-status', adminAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Toggle category status error:', error);
+    console.error('Stack:', error.stack);
     res.status(500).json({ error: 'Server error' });
   }
 });

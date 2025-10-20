@@ -1,0 +1,15 @@
+meta {
+  name: Orders - Delete
+  type: http
+  seq: 18
+}
+
+delete {
+  url: {{baseUrl}}/api/orders/{{orderId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}

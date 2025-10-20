@@ -1,0 +1,15 @@
+meta {
+  name: Public - Featured Products
+  type: http
+  seq: 25
+}
+
+get {
+  url: {{baseUrl}}/api/public/featured?limit=8
+  body: none
+  auth: none
+}
+
+params:query {
+  limit: 8
+}

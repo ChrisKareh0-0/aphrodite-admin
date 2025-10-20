@@ -1,0 +1,15 @@
+meta {
+  name: Products - Toggle Status
+  type: http
+  seq: 13
+}
+
+put {
+  url: {{baseUrl}}/api/products/{{productId}}/toggle-status
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}

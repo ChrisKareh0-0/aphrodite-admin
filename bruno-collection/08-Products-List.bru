@@ -1,0 +1,20 @@
+meta {
+  name: Products - List All
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/products?page=1&limit=10
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  limit: 10
+}
+
+auth:bearer {
+  token: {{authToken}}
+}

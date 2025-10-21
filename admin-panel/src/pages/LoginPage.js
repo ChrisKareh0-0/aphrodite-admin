@@ -145,7 +145,7 @@ const LoginPage = () => {
         {/* Footer */}
         <div className="text-center">
           <p className="text-xs text-gray-500">
-            © 2024 Aphrodite Store. All rights reserved.
+            © 2025 Aphrodite Store. All rights reserved.
           </p>
         </div>
       </div>

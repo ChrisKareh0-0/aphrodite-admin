@@ -2,9 +2,16 @@ import axios from 'axios';
 
 // Default to window origin at runtime so the admin panel works when served from the
 // backend in production. Fallback to localhost for local development.
-// Use relative '/api' by default so the admin panel talks to the same origin in production.
-// If REACT_APP_API_URL is provided (e.g., in dev or a different hosting setup), it will override.
-const API_URL = process.env.REACT_APP_API_URL || '/api';
+// Switch API base URL based on environment
+let API_URL = '/api';
+if (typeof window !== 'undefined') {
+  if (window.location.hostname === 'localhost') {
+    API_URL = 'http://localhost:3001/api';
+  }
+}
+if (process.env.REACT_APP_API_URL) {
+  API_URL = process.env.REACT_APP_API_URL;
+}
 
 const apiClient = axios.create({
   baseURL: API_URL,

@@ -12,7 +12,7 @@ admin-panel/node_modules/
 # Build outputs
 # admin-panel/build/ - COMMENTED OUT - Need this in production
 dist/
-build/
+# build/ - COMMENTED OUT - conflicts with admin-panel/build
 
 # Logs
 logs

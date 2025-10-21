@@ -9,18 +9,35 @@ const router = express.Router();
 // Test endpoint
 router.get('/test', async (req, res) => {
   try {
-    const userCount = await User.countDocuments();
-    const adminUser = await User.findOne({ email: 'admin@aphrodite.com' });
+    const mongoose = await import('mongoose');
+    const dbState = mongoose.connection.readyState;
+
+    // Try to ping the database
+    let userCount = null;
+    let adminUser = null;
+    let dbError = null;
+
+    if (dbState === 1) {
+      try {
+        userCount = await User.countDocuments();
+        adminUser = await User.findOne({ email: 'admin@aphrodite.com' });
+      } catch (err) {
+        dbError = err.message;
+      }
+    }
 
     res.json({
       message: 'Auth route is working',
       hasJwtSecret: !!process.env.JWT_SECRET,
       nodeEnv: process.env.NODE_ENV,
+      mongoUri: process.env.MONGODB_URI ? 'Set (length: ' + process.env.MONGODB_URI.length + ')' : 'Not set',
       database: {
-        connected: true,
+        readyState: dbState,
+        stateDescription: ['disconnected', 'connected', 'connecting', 'disconnecting'][dbState],
         totalUsers: userCount,
         hasAdminUser: !!adminUser,
-        adminEmail: adminUser ? adminUser.email : null
+        adminEmail: adminUser ? adminUser.email : null,
+        queryError: dbError
       }
     });
   } catch (error) {
@@ -30,7 +47,8 @@ router.get('/test', async (req, res) => {
       nodeEnv: process.env.NODE_ENV,
       database: {
         connected: false,
-        error: error.message
+        error: error.message,
+        stack: error.stack
       }
     });
   }

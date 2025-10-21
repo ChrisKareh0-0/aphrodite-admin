@@ -84,21 +84,33 @@ const mongoOptions = {
   connectTimeoutMS: 30000,
 };
 
+// Clean the MongoDB URI - remove any whitespace/newlines that might have been added
+const mongoUri = (process.env.MONGODB_URI || 'mongodb://localhost:27017/aphrodite')
+  .replace(/\s+/g, '') // Remove all whitespace including newlines
+  .trim();
+
 console.log('Attempting to connect to MongoDB...');
 console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
+console.log('MONGODB_URI length:', process.env.MONGODB_URI?.length);
+console.log('Cleaned URI length:', mongoUri.length);
 console.log('NODE_ENV:', process.env.NODE_ENV);
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/aphrodite', mongoOptions)
+mongoose.connect(mongoUri, mongoOptions)
   .then(async () => {
     console.log('✅ MongoDB connected successfully');
     console.log('Database name:', mongoose.connection.name);
+    console.log('Database host:', mongoose.connection.host);
     // Create default admin user if it doesn't exist
     const { createDefaultAdmin } = await import('./utils/createAdmin.js');
     await createDefaultAdmin();
   })
   .catch(err => {
-    console.error('❌ MongoDB connection error:', err.message);
-    console.error('Full error:', err);
+    console.error('❌ MongoDB connection FAILED');
+    console.error('Error name:', err.name);
+    console.error('Error message:', err.message);
+    console.error('Error code:', err.code);
+    console.error('Full error:', JSON.stringify(err, null, 2));
+    // Don't exit - let the app run so we can see the error
   });
 
 // Import routes

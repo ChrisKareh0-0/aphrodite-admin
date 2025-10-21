@@ -7,12 +7,33 @@ import { auth, adminAuth } from '../middleware/auth.js';
 const router = express.Router();
 
 // Test endpoint
-router.get('/test', (req, res) => {
-  res.json({
-    message: 'Auth route is working',
-    hasJwtSecret: !!process.env.JWT_SECRET,
-    nodeEnv: process.env.NODE_ENV
-  });
+router.get('/test', async (req, res) => {
+  try {
+    const userCount = await User.countDocuments();
+    const adminUser = await User.findOne({ email: 'admin@aphrodite.com' });
+
+    res.json({
+      message: 'Auth route is working',
+      hasJwtSecret: !!process.env.JWT_SECRET,
+      nodeEnv: process.env.NODE_ENV,
+      database: {
+        connected: true,
+        totalUsers: userCount,
+        hasAdminUser: !!adminUser,
+        adminEmail: adminUser ? adminUser.email : null
+      }
+    });
+  } catch (error) {
+    res.json({
+      message: 'Auth route is working',
+      hasJwtSecret: !!process.env.JWT_SECRET,
+      nodeEnv: process.env.NODE_ENV,
+      database: {
+        connected: false,
+        error: error.message
+      }
+    });
+  }
 });
 
 // Generate JWT token

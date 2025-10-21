@@ -70,8 +70,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Static files for uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Admin panel static files
-app.use('/admin', express.static(path.join(__dirname, '../admin-panel/build')));
+// Admin panel static files - must come BEFORE the /admin/* route
+app.use('/admin', express.static(path.join(__dirname, '../admin-panel/build'), {
+  index: false // Don't serve index.html for directory requests
+}));
 app.use('/static', express.static(path.join(__dirname, '../admin-panel/build/static')));
 app.use('/favicon.ico', express.static(path.join(__dirname, '../admin-panel/build/favicon.ico')));
 
@@ -105,12 +107,15 @@ app.use('/api/test', apiTestRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/settings', settingsRoutes);
 
-// Admin panel routes - serve React app for all admin routes
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, '../admin-panel/build/index.html'));
-});
-
-app.get('/admin/*', (req, res) => {
+// Admin panel routes - serve React app for HTML navigation (but not static files)
+// The static middleware above will handle /admin/static/*, /admin/favicon.ico, etc.
+// This catch-all only serves index.html for actual page routes
+app.get('/admin*', (req, res, next) => {
+  // If the request is for a static file (has an extension), skip to next middleware
+  if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|json)$/)) {
+    return next();
+  }
+  // Otherwise, serve the React app
   res.sendFile(path.join(__dirname, '../admin-panel/build/index.html'));
 });
 

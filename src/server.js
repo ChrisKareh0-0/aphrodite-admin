@@ -77,15 +77,29 @@ app.use('/admin', express.static(path.join(__dirname, '../admin-panel/build'), {
 app.use('/static', express.static(path.join(__dirname, '../admin-panel/build/static')));
 app.use('/favicon.ico', express.static(path.join(__dirname, '../admin-panel/build/favicon.ico')));
 
-// Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/aphrodite')
+// Database connection with better options for production
+const mongoOptions = {
+  serverSelectionTimeoutMS: 30000, // 30 seconds timeout
+  socketTimeoutMS: 45000,
+  connectTimeoutMS: 30000,
+};
+
+console.log('Attempting to connect to MongoDB...');
+console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
+console.log('NODE_ENV:', process.env.NODE_ENV);
+
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/aphrodite', mongoOptions)
   .then(async () => {
-    console.log('MongoDB connected successfully');
+    console.log('✅ MongoDB connected successfully');
+    console.log('Database name:', mongoose.connection.name);
     // Create default admin user if it doesn't exist
     const { createDefaultAdmin } = await import('./utils/createAdmin.js');
     await createDefaultAdmin();
   })
-  .catch(err => console.error('MongoDB connection error:', err));
+  .catch(err => {
+    console.error('❌ MongoDB connection error:', err.message);
+    console.error('Full error:', err);
+  });
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -121,7 +135,29 @@ app.get('/admin*', (req, res, next) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Aphrodite API is running' });
+  const dbState = mongoose.connection.readyState;
+  const dbStates = {
+    0: 'disconnected',
+    1: 'connected',
+    2: 'connecting',
+    3: 'disconnecting'
+  };
+
+  res.json({
+    status: 'OK',
+    message: 'Aphrodite API is running',
+    database: {
+      status: dbStates[dbState],
+      readyState: dbState,
+      name: mongoose.connection.name,
+      host: mongoose.connection.host
+    },
+    environment: {
+      nodeEnv: process.env.NODE_ENV,
+      hasMongoUri: !!process.env.MONGODB_URI,
+      hasJwtSecret: !!process.env.JWT_SECRET
+    }
+  });
 });
 
 // 404 handler for API routes only (don't catch static files)

@@ -105,7 +105,11 @@ app.use('/api/test', apiTestRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/settings', settingsRoutes);
 
-// Admin panel route
+// Admin panel routes - serve React app for all admin routes
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, '../admin-panel/build/index.html'));
+});
+
 app.get('/admin/*', (req, res) => {
   res.sendFile(path.join(__dirname, '../admin-panel/build/index.html'));
 });
@@ -115,9 +119,9 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Aphrodite API is running' });
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+// 404 handler for API routes only (don't catch static files)
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: 'API route not found' });
 });
 
 // Error handling middleware

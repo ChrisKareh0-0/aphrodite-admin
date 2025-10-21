@@ -8,11 +8,18 @@ const router = express.Router();
 
 // Test endpoint
 router.get('/test', (req, res) => {
-  res.json({ message: 'Auth route is working' });
+  res.json({
+    message: 'Auth route is working',
+    hasJwtSecret: !!process.env.JWT_SECRET,
+    nodeEnv: process.env.NODE_ENV
+  });
 });
 
 // Generate JWT token
 const generateToken = (userId) => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not defined in environment variables');
+  }
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '24h' });
 };
 
@@ -63,7 +70,12 @@ router.post('/login', [
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Error stack:', error.stack);
+    console.error('Error message:', error.message);
+    res.status(500).json({
+      error: 'Server error',
+      message: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 

@@ -10,7 +10,7 @@ admin-panel/node_modules/
 .env.production.local
 
 # Build outputs
-admin-panel/build/
+# admin-panel/build/ - COMMENTED OUT - Need this in production
 dist/
 build/
 

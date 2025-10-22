@@ -64,10 +64,6 @@ const corsOptions = {
 
 // Apply CORS configuration
 app.use(cors(corsOptions));
-} else {
-  // Production CORS configuration
-  app.use(cors(corsOptions));
-}
 
 // Security middleware - Relaxed for development
 app.use(helmet({

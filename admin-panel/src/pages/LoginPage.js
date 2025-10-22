@@ -133,13 +133,13 @@ const LoginPage = () => {
           </form>
 
           {/* Demo Credentials */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-md">
+          {/* <div className="mt-6 p-4 bg-gray-50 rounded-md">
             <h3 className="text-sm font-medium text-gray-700 mb-2">Demo Credentials:</h3>
             <div className="text-xs text-gray-600 space-y-1">
               <div><strong>Email:</strong> admin@aphrodite.com</div>
               <div><strong>Password:</strong> admin123</div>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Footer */}

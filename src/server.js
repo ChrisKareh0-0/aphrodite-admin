@@ -31,29 +31,42 @@ uploadsDirs.forEach(dir => {
 
 // CORS configuration
 const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:3000',
-  'http://localhost:3002', // Admin panel in development
-  'http://localhost:3001', // Backend itself
+  'https://www.aphroditeeelb.com',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:3002'
 ];
 
-// In production, only allow specified origins
-if (process.env.NODE_ENV === 'production' && process.env.FRONTEND_URL) {
-  // Remove localhost origins in production
-  const prodOrigins = allowedOrigins.filter(origin => !origin.includes('localhost'));
-  app.use(cors({
-    origin: prodOrigins,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-  }));
+// CORS options with proper error handling
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    // Clean up origin by removing trailing slashes
+    const cleanOrigin = origin.replace(/\/$/, '');
+    
+    if (allowedOrigins.includes(cleanOrigin)) {
+      callback(null, true);
+    } else {
+      console.warn(`Blocked request from unauthorized origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+};
+
+// Apply CORS configuration
+app.use(cors(corsOptions));
 } else {
-  // Development: allow all origins for easier testing
-  app.use(cors({
-    origin: '*',
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-  }));
+  // Production CORS configuration
+  app.use(cors(corsOptions));
 }
 
 // Security middleware - Relaxed for development

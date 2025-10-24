@@ -78,6 +78,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Static files for uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/api/uploads', express.static(path.join(__dirname, '../uploads'))); // Add API prefix route for consistency
 
 // Admin panel static files - must come BEFORE the /admin/* route
 app.use('/admin', express.static(path.join(__dirname, '../admin-panel/build'), {
@@ -131,6 +132,7 @@ import dashboardRoutes from './routes/dashboard.js';
 import apiTestRoutes from './routes/apiTest.js';
 import publicRoutes from './routes/public.js';
 import settingsRoutes from './routes/settings.js';
+import imageRoutes from './routes/images.js';
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -141,6 +143,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/test', apiTestRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/images', imageRoutes);
 
 // Admin panel routes - serve React app for HTML navigation (but not static files)
 // The static middleware above will handle /admin/static/*, /admin/favicon.ico, etc.

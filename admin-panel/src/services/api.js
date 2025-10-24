@@ -1,17 +1,5 @@
 import axios from 'axios';
-
-// Default to window origin at runtime so the admin panel works when served from the
-// backend in production. Fallback to localhost for local development.
-// Switch API base URL based on environment
-let API_URL = '/api';
-if (typeof window !== 'undefined') {
-  if (window.location.hostname === 'localhost') {
-    API_URL = 'http://localhost:3001/api';
-  }
-}
-if (process.env.REACT_APP_API_URL) {
-  API_URL = process.env.REACT_APP_API_URL;
-}
+import { API_URL, IMAGE_BASE_URL } from '../config';
 
 const apiClient = axios.create({
   baseURL: API_URL,

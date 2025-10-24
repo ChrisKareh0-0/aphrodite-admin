@@ -1,38 +1,23 @@
 import express from 'express';
 import { body, validationResult, query } from 'express-validator';
 import multer from 'multer';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 import Product from '../models/Product.js';
 import Category from '../models/Category.js';
 import { adminAuth } from '../middleware/auth.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 const router = express.Router();
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../../uploads/products/'));
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'product-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Configure multer for memory storage
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit per file
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
 
-    if (mimetype && extname) {
+    if (mimetype) {
       return cb(null, true);
     } else {
       cb(new Error('Only image files are allowed (jpeg, jpg, png, webp)'));
@@ -207,7 +192,8 @@ router.post('/', [
     // Handle uploaded images
     if (req.files && req.files.length > 0) {
       productData.images = req.files.map((file, index) => ({
-        url: `/uploads/products/${file.filename}`,
+        data: file.buffer,
+        contentType: file.mimetype,
         alt: `${req.body.name} - Image ${index + 1}`,
         isPrimary: index === 0
       }));
@@ -312,7 +298,8 @@ router.put('/:id', [
     // Handle new uploaded images
     if (req.files && req.files.length > 0) {
       const newImages = req.files.map((file, index) => ({
-        url: `/uploads/products/${file.filename}`,
+        data: file.buffer,
+        contentType: file.mimetype,
         alt: `${product.name} - Image ${product.images.length + index + 1}`,
         isPrimary: product.images.length === 0 && index === 0
       }));

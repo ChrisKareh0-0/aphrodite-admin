@@ -117,10 +117,13 @@ const createOrder = async (req, res) => {
         });
       }
 
-      if (product.stock < item.quantity) {
+      // Check stock for specific color and size
+      const stockItem = product.stock.find(s => s.color === item.color && s.size === item.size);
+      if (!stockItem || stockItem.quantity < item.quantity) {
+        const available = stockItem ? stockItem.quantity : 0;
         return res.status(400).json({
           success: false,
-          message: `Insufficient stock for product ${product.name}. Available: ${product.stock}`
+          message: `Insufficient stock for product ${product.name} in ${item.color} color, size ${item.size}. Available: ${available}`
         });
       }
 
@@ -157,11 +160,17 @@ const createOrder = async (req, res) => {
 
     await order.save();
 
-    // Update product stock
+    // Update product stock for specific color and size
     for (const item of validatedItems) {
-      await Product.findByIdAndUpdate(
-        item.product,
-        { $inc: { stock: -item.quantity } }
+      await Product.findOneAndUpdate(
+        {
+          _id: item.product,
+          'stock.color': item.color,
+          'stock.size': item.size
+        },
+        {
+          $inc: { 'stock.$.quantity': -item.quantity }
+        }
       );
     }
 
@@ -250,9 +259,15 @@ const deleteOrder = async (req, res) => {
     // Restore product stock if order is cancelled
     if (order.status === 'cancelled' || order.status === 'refunded') {
       for (const item of order.items) {
-        await Product.findByIdAndUpdate(
-          item.product,
-          { $inc: { stock: item.quantity } }
+        await Product.findOneAndUpdate(
+          {
+            _id: item.product,
+            'stock.color': item.color,
+            'stock.size': item.size
+          },
+          {
+            $inc: { 'stock.$.quantity': item.quantity }
+          }
         );
       }
     }

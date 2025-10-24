@@ -244,13 +244,19 @@ const Dashboard = () => {
                   <p className="text-xs text-gray-500">SKU: {product.sku || 'N/A'}</p>
                 </div>
                 <div className="text-right">
-                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                    product.stock === 0 ? 'bg-red-100 text-red-800' :
-                    product.stock <= 5 ? 'bg-orange-100 text-orange-800' :
-                    'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {product.stock} left
-                  </span>
+                  <div>
+                    {product.stock.map((stockItem, idx) => (
+                      <div key={idx} className="mb-1 last:mb-0">
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                          stockItem.quantity === 0 ? 'bg-red-100 text-red-800' :
+                          stockItem.quantity <= 5 ? 'bg-orange-100 text-orange-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {stockItem.color} - {stockItem.size}: {stockItem.quantity} left
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )) || (

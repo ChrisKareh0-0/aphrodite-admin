@@ -61,7 +61,18 @@ const getDashboardStats = async (req, res) => {
       ]),
       
       // Low stock products
-      Product.find({ stock: { $lte: 10 } }).select('name stock').limit(5),
+      Product.aggregate([
+        { $unwind: '$stock' },
+        { $match: { 'stock.quantity': { $lte: 10 } } },
+        {
+          $group: {
+            _id: '$_id',
+            name: { $first: '$name' },
+            stock: { $push: '$stock' }
+          }
+        },
+        { $limit: 5 }
+      ]),
       
       // Recent orders
       Order.find()
@@ -280,6 +291,19 @@ const getProductAnalytics = async (req, res) => {
       // Product statistics
       Product.aggregate([
         {
+          $addFields: {
+            totalStock: {
+              $sum: {
+                $map: {
+                  input: '$stock',
+                  as: 'stockItem',
+                  in: '$$stockItem.quantity'
+                }
+              }
+            }
+          }
+        },
+        {
           $group: {
             _id: null,
             totalProducts: { $sum: 1 },
@@ -287,8 +311,26 @@ const getProductAnalytics = async (req, res) => {
             featuredProducts: { $sum: { $cond: ['$isFeatured', 1, 0] } },
             onSaleProducts: { $sum: { $cond: ['$isOnSale', 1, 0] } },
             avgPrice: { $avg: '$price' },
-            totalStock: { $sum: '$stock' },
-            lowStockCount: { $sum: { $cond: [{ $lte: ['$stock', 10] }, 1, 0] } }
+            totalStock: { $sum: '$totalStock' },
+            lowStockCount: {
+              $sum: {
+                $cond: [
+                  {
+                    $gt: [{
+                      $size: {
+                        $filter: {
+                          input: '$stock',
+                          as: 'stockItem',
+                          cond: { $lte: ['$$stockItem.quantity', 10] }
+                        }
+                      }
+                    }, 0]
+                  },
+                  1,
+                  0
+                ]
+              }
+            }
           }
         }
       ]),
@@ -309,17 +351,44 @@ const getProductAnalytics = async (req, res) => {
             name: 1,
             productCount: { $size: '$products' },
             avgPrice: { $avg: '$products.price' },
-            totalStock: { $sum: '$products.stock' }
+            totalStock: {
+              $sum: {
+                $reduce: {
+                  input: { $reduce: { input: '$products', initialValue: [], in: { $concatArrays: ['$$value', '$$this.stock'] } } },
+                  initialValue: 0,
+                  in: { $add: ['$$value', '$$this.quantity'] }
+                }
+              }
+            }
           }
         },
         { $sort: { productCount: -1 } }
       ]),
       
       // Stock alerts
-      Product.find({ stock: { $lte: 10 } })
-        .populate('category', 'name')
-        .select('name stock category price')
-        .sort({ stock: 1 }),
+      Product.aggregate([
+        { $unwind: '$stock' },
+        { $match: { 'stock.quantity': { $lte: 10 } } },
+        {
+          $lookup: {
+            from: 'categories',
+            localField: 'category',
+            foreignField: '_id',
+            as: 'category'
+          }
+        },
+        { $unwind: '$category' },
+        {
+          $group: {
+            _id: '$_id',
+            name: { $first: '$name' },
+            price: { $first: '$price' },
+            category: { $first: '$category' },
+            stock: { $push: '$stock' }
+          }
+        },
+        { $sort: { 'stock.quantity': 1 } }
+      ]),
       
       // Featured products
       Product.find({ isFeatured: true, isActive: true })

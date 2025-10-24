@@ -201,7 +201,17 @@ const Products = () => {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {product.stock}
+                        {Array.isArray(product.stock) ? (
+                          <div className="flex flex-col gap-1">
+                            {product.stock.map((stockItem, index) => (
+                              <span key={index} className="text-xs">
+                                {stockItem.color} - {stockItem.size}: {stockItem.quantity}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          'No stock data'
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span

@@ -69,7 +69,17 @@ const seedDatabase = async () => {
         price: 89.99,
         originalPrice: 109.99,
         category: createdCategories[0]._id,
-        stock: 25,
+        stock: [
+          { color: 'Red', size: 'S', quantity: 5 },
+          { color: 'Red', size: 'M', quantity: 5 },
+          { color: 'Red', size: 'L', quantity: 5 },
+          { color: 'Blue', size: 'S', quantity: 5 },
+          { color: 'Blue', size: 'M', quantity: 5 },
+          { color: 'Blue', size: 'L', quantity: 5 },
+          { color: 'Black', size: 'S', quantity: 5 },
+          { color: 'Black', size: 'M', quantity: 5 },
+          { color: 'Black', size: 'L', quantity: 5 }
+        ],
         sku: 'APH-DRESS-001',
         colors: [
           { name: 'Red', code: '#FF0000', available: true },
@@ -95,7 +105,14 @@ const seedDatabase = async () => {
         shortDescription: 'Comfortable classic sneakers',
         price: 79.99,
         category: createdCategories[1]._id,
-        stock: 40,
+        stock: [
+          { color: 'White', size: '37', quantity: 10 },
+          { color: 'White', size: '38', quantity: 10 },
+          { color: 'White', size: '39', quantity: 10 },
+          { color: 'Black', size: '37', quantity: 10 },
+          { color: 'Black', size: '38', quantity: 10 },
+          { color: 'Black', size: '39', quantity: 10 }
+        ],
         sku: 'APH-SHOES-001',
         colors: [
           { name: 'White', code: '#FFFFFF', available: true },

@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
-import { X } from 'lucide-react';
+import { X, Trash2 } from 'lucide-react';
+import { getImageUrl } from '../config';
 
 const ProductForm = () => {
   const navigate = useNavigate();
@@ -18,16 +19,18 @@ const ProductForm = () => {
     price: '',
     originalPrice: '',
     category: '',
-    stock: 0,
     sku: '',
     isActive: true,
     isFeatured: false,
   });
 
+  const [stock, setStock] = useState([]); // Initialize as empty array for stock quantities
+
   const [colors, setColors] = useState([]);
   const [sizes, setSizes] = useState([]);
   const [tags, setTags] = useState([]);
   const [imageFiles, setImageFiles] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
 
   const { data: categoriesData } = useQuery('categories', api.categories.getAll);
   const { data: productData } = useQuery(
@@ -46,6 +49,25 @@ const ProductForm = () => {
       toast.error(error.response?.data?.error || 'Failed to create product');
     },
   });
+
+  const deleteImageMutation = useMutation(
+    ({ productId, imageIndex }) => api.products.removeImage(productId, imageIndex),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['product', id]);
+        toast.success('Image removed successfully');
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.error || 'Failed to remove image');
+      },
+    }
+  );
+
+  const handleImageDelete = (imageIndex) => {
+    if (window.confirm('Are you sure you want to delete this image?')) {
+      deleteImageMutation.mutate({ productId: id, imageIndex });
+    }
+  };
 
   const updateMutation = useMutation(
     (data) => api.products.update(id, data),
@@ -73,14 +95,16 @@ const ProductForm = () => {
         price: product.price || '',
         originalPrice: product.originalPrice || '',
         category: product.category?._id || '',
-        stock: product.stock || 0,
         sku: product.sku || '',
         isActive: product.isActive !== false,
         isFeatured: product.isFeatured || false,
       });
       setColors(product.colors || []);
       setSizes(product.sizes || []);
+      // Ensure stock is always an array
+      setStock(Array.isArray(product.stock) ? product.stock : []);
       setTags(product.tags || []);
+      setExistingImages(product.images || []);
     }
   }, [productData]);
 
@@ -95,14 +119,17 @@ const ProductForm = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    // Filter out any stock entries with zero quantity
+    const filteredStock = stock.filter(item => item.quantity > 0);
+
     const submitData = {
       ...formData,
       price: parseFloat(formData.price),
       originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : null,
-      stock: parseInt(formData.stock) || 0,
-      colors: colors.length > 0 ? colors : [],
-      sizes: sizes.length > 0 ? sizes : [],
-      tags: tags.length > 0 ? tags : [],
+      stock: JSON.stringify(filteredStock),  // Convert stock array to JSON string
+      colors: JSON.stringify(colors.length > 0 ? colors : []),  // Convert colors array to JSON string
+      sizes: JSON.stringify(sizes.length > 0 ? sizes : []),  // Convert sizes array to JSON string
+      tags: JSON.stringify(tags.length > 0 ? tags : []),  // Convert tags array to JSON string
       images: imageFiles,
     };
 
@@ -266,20 +293,7 @@ const ProductForm = () => {
               />
             </div>
 
-            <div>
-              <label htmlFor="stock" className="block text-sm font-medium text-gray-700">
-                Stock
-              </label>
-              <input
-                type="number"
-                id="stock"
-                name="stock"
-                min="0"
-                value={formData.stock}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              />
-            </div>
+
 
             <div>
               <label htmlFor="sku" className="block text-sm font-medium text-gray-700">
@@ -307,6 +321,28 @@ const ProductForm = () => {
               onChange={(e) => setImageFiles(Array.from(e.target.files))}
               className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
             />
+
+            {/* Existing Images */}
+            {existingImages.length > 0 && (
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {existingImages.map((image, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={getImageUrl(`/uploads/products/${image.data ? 'product-' + Math.random().toString().slice(2) + '.png' : image}`)}
+                      alt={`Product ${index + 1}`}
+                      className="w-full h-24 object-cover rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleImageDelete(index)}
+                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Colors */}
@@ -382,6 +418,86 @@ const ProductForm = () => {
               ))}
             </div>
           </div>
+
+          {/* Stock Management Table */}
+          {colors.length > 0 && sizes.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-4">
+                Stock Management
+              </label>
+              <div className="overflow-x-auto border rounded-lg">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Color
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Size
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Quantity
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {colors.map(color =>
+                      sizes.map(size => {
+                        const stockItem = (Array.isArray(stock) ? stock : []).find(
+                          item => item?.color === color.name && item?.size === size.name
+                        ) || { quantity: 0 };
+                        
+                        return (
+                          <tr key={`${color.name}-${size.name}`}>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div
+                                  className="w-4 h-4 rounded-full mr-2"
+                                  style={{ backgroundColor: color.code }}
+                                />
+                                {color.name}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {size.name}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <input
+                                type="number"
+                                min="0"
+                                value={stockItem.quantity}
+                                onChange={(e) => {
+                                  const value = parseInt(e.target.value) || 0;
+                                  setStock(prevStock => {
+                                    // Ensure prevStock is an array
+                                    const currentStock = Array.isArray(prevStock) ? prevStock : [];
+                                    // Remove existing entry for this color/size if it exists
+                                    const filtered = currentStock.filter(
+                                      item => !(item.color === color.name && item.size === size.name)
+                                    );
+                                    // Add new entry with updated quantity
+                                    return [
+                                      ...filtered,
+                                      {
+                                        color: color.name,
+                                        size: size.name,
+                                        quantity: value
+                                      }
+                                    ];
+                                  });
+                                }}
+                                className="w-24 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Tags */}
           <div>

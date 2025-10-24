@@ -174,7 +174,7 @@ export const api = {
   },
 
   // Public endpoints (for testing)
-  public: {
+  publicApi: {
     getCategories: () => apiClient.get('/public/categories'),
     getProducts: (params) => apiClient.get('/public/products', { params }),
     getProduct: (slug) => apiClient.get(`/public/products/${slug}`),

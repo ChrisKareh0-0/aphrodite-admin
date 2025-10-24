@@ -121,7 +121,7 @@ router.post('/', [
   body('price').isFloat({ min: 0 }),
   body('originalPrice').optional().isFloat({ min: 0 }),
   body('category').isMongoId(),
-  body('stock').optional().isInt({ min: 0 }),
+  body('stock').optional().isJSON(),
   body('sku').optional().trim(),
   body('colors').optional().isJSON(),
   body('sizes').optional().isJSON(),
@@ -161,7 +161,13 @@ router.post('/', [
       productData.isOnSale = productData.price < productData.originalPrice;
     }
 
-    if (req.body.stock) productData.stock = parseInt(req.body.stock);
+    if (req.body.stock) {
+      try {
+        productData.stock = JSON.parse(req.body.stock);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid stock format' });
+      }
+    }
     if (req.body.sku) productData.sku = req.body.sku;
 
     // Parse JSON fields
@@ -226,7 +232,7 @@ router.put('/:id', [
   body('price').optional().isFloat({ min: 0 }),
   body('originalPrice').optional().isFloat({ min: 0 }),
   body('category').optional().isMongoId(),
-  body('stock').optional().isInt({ min: 0 }),
+  body('stock').optional().isJSON(),
   body('sku').optional().trim(),
   body('colors').optional().isJSON(),
   body('sizes').optional().isJSON(),
@@ -267,12 +273,21 @@ router.put('/:id', [
     }
 
     // Update basic fields
-    const updateFields = ['name', 'description', 'shortDescription', 'stock', 'isActive', 'isFeatured'];
+    const updateFields = ['name', 'description', 'shortDescription', 'isActive', 'isFeatured'];
     updateFields.forEach(field => {
       if (req.body[field] !== undefined) {
         product[field] = req.body[field];
       }
     });
+
+    // Handle stock separately since it needs to be parsed as JSON
+    if (req.body.stock) {
+      try {
+        product.stock = JSON.parse(req.body.stock);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid stock format' });
+      }
+    }
 
     if (req.body.price) {
       product.price = parseFloat(req.body.price);

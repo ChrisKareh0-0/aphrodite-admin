@@ -57,11 +57,15 @@ const productSchema = new mongoose.Schema({
       default: true
     }
   }],
-  stock: {
-    type: Number,
-    default: 0,
-    min: 0
-  },
+  stock: [{
+    color: String,
+    size: String,
+    quantity: {
+      type: Number,
+      default: 0,
+      min: 0
+    }
+  }],
   sku: {
     type: String,
     unique: true,

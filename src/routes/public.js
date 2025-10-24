@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { query, validationResult } from 'express-validator';
 import Product from '../models/Product.js';
 import Category from '../models/Category.js';
+import Review from '../models/Review.js';
 
 const router = express.Router();
 
@@ -169,7 +170,7 @@ router.get('/products/:slug', async (req, res) => {
       price: product.price,
       originalPrice: product.originalPrice,
       category: product.category,
-      images: product.images,
+      images: product.images?.map(img => `/api/images/products/${product._id}/${img._id}`) || [],
       colors: product.colors,
       sizes: product.sizes,
       stock: product.stock,
@@ -183,6 +184,67 @@ router.get('/products/:slug', async (req, res) => {
     res.json({ product: formattedProduct });
   } catch (error) {
     console.error('Get public product error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   GET /api/public/products/:slug/reviews
+// @desc    Get product reviews by slug
+// @access  Public
+router.get('/products/:slug/reviews', async (req, res) => {
+  try {
+    const product = await Product.findOne({ slug: req.params.slug, isActive: true });
+    
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    const reviews = await Review.find({ productId: product._id })
+      .sort({ createdAt: -1 })
+      .select('userName rating comment verified createdAt');
+
+    res.json({ reviews });
+  } catch (error) {
+    console.error('Get product reviews error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   GET /api/public/products/:slug/related
+// @desc    Get related products by category
+// @access  Public
+router.get('/products/:slug/related', async (req, res) => {
+  try {
+    const product = await Product.findOne({ slug: req.params.slug, isActive: true });
+    
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // Get products from the same category, excluding the current product
+    const relatedProducts = await Product.find({
+      _id: { $ne: product._id },
+      category: product.category,
+      isActive: true
+    })
+      .populate('category', 'name slug')
+      .select('name slug price images colors sizes stock rating')
+      .sort({ rating: -1 })
+      .limit(4);
+
+    const formattedProducts = relatedProducts.map(product => ({
+      id: product._id,
+      name: product.name,
+      slug: product.slug,
+      price: product.price,
+      images: product.images?.map(img => `/api/images/products/${product._id}/${img._id}`) || [],
+      rating: product.rating,
+      reviewCount: product.rating?.count || 0
+    }));
+
+    res.json({ products: formattedProducts });
+  } catch (error) {
+    console.error('Get related products error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

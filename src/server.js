@@ -32,6 +32,7 @@ uploadsDirs.forEach(dir => {
 // CORS configuration
 const allowedOrigins = [
   'https://www.aphroditeeelb.com',
+  'https://aphrodite-admin.onrender.com',
   'http://localhost:3000',
   'http://localhost:3001',
   'http://localhost:3002'

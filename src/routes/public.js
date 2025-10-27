@@ -147,14 +147,27 @@ router.get('/products', [
 });
 
 // @route   GET /api/public/products/:slug
-// @desc    Get single product by slug for frontend
+// @desc    Get single product by slug or ID for frontend
 // @access  Public
 router.get('/products/:slug', async (req, res) => {
   try {
-    const product = await Product.findOne({
-      slug: req.params.slug,
-      isActive: true
-    }).populate('category', 'name slug');
+    // Try to find product by slug or ID (handle both cases)
+    const isValidObjectId = mongoose.Types.ObjectId.isValid(req.params.slug);
+    const productQuery = isValidObjectId
+      ? {
+          $or: [
+            { slug: req.params.slug },
+            { _id: req.params.slug }
+          ],
+          isActive: true
+        }
+      : {
+          slug: req.params.slug,
+          isActive: true
+        };
+
+    const product = await Product.findOne(productQuery)
+      .populate('category', 'name slug');
 
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
@@ -189,11 +202,26 @@ router.get('/products/:slug', async (req, res) => {
 });
 
 // @route   GET /api/public/products/:slug/reviews
-// @desc    Get product reviews by slug
+// @desc    Get product reviews by slug or ID
 // @access  Public
 router.get('/products/:slug/reviews', async (req, res) => {
   try {
-    const product = await Product.findOne({ slug: req.params.slug, isActive: true });
+    // Try to find product by slug or ID
+    const isValidObjectId = mongoose.Types.ObjectId.isValid(req.params.slug);
+    const productQuery = isValidObjectId
+      ? {
+          $or: [
+            { slug: req.params.slug },
+            { _id: req.params.slug }
+          ],
+          isActive: true
+        }
+      : {
+          slug: req.params.slug,
+          isActive: true
+        };
+
+    const product = await Product.findOne(productQuery);
     
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
@@ -211,11 +239,26 @@ router.get('/products/:slug/reviews', async (req, res) => {
 });
 
 // @route   GET /api/public/products/:slug/related
-// @desc    Get related products by category
+// @desc    Get related products by category (by slug or ID)
 // @access  Public
 router.get('/products/:slug/related', async (req, res) => {
   try {
-    const product = await Product.findOne({ slug: req.params.slug, isActive: true });
+    // Try to find product by slug or ID
+    const isValidObjectId = mongoose.Types.ObjectId.isValid(req.params.slug);
+    const productQuery = isValidObjectId
+      ? {
+          $or: [
+            { slug: req.params.slug },
+            { _id: req.params.slug }
+          ],
+          isActive: true
+        }
+      : {
+          slug: req.params.slug,
+          isActive: true
+        };
+
+    const product = await Product.findOne(productQuery);
     
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });

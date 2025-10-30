@@ -171,7 +171,7 @@ const Products = () => {
                           {product.images?.[0] ? (
                             <img
                               className="h-10 w-10 rounded object-cover"
-                              src={product.images[0].url}
+                              src={product.images?.[0]?.path ? `/uploads/${product.images[0].path}` : '/placeholder.svg'}
                               alt={product.name}
                             />
                           ) : (

@@ -4,6 +4,13 @@ import multer from 'multer';
 import Product from '../models/Product.js';
 import Category from '../models/Category.js';
 import { adminAuth } from '../middleware/auth.js';
+import fs from 'fs';
+import path from 'path';
+
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const router = express.Router();
 
@@ -73,6 +80,11 @@ router.get('/', [
       .limit(limit);
 
     const total = await Product.countDocuments(filter);
+
+    // Debug: Log output of all product image paths
+    console.log('--- PRODUCTS PAGE DATA ---');
+    products.forEach(p => console.log(`ID: ${p._id}\tName: ${p.name}\tImages: ${JSON.stringify(p.images)}`));
+    console.log('----- END PAGE DATA -----');
 
     res.json({
       products,
@@ -197,12 +209,21 @@ router.post('/', [
 
     // Handle uploaded images
     if (req.files && req.files.length > 0) {
-      productData.images = req.files.map((file, index) => ({
-        data: file.buffer,
-        contentType: file.mimetype,
-        alt: `${req.body.name} - Image ${index + 1}`,
-        isPrimary: index === 0
-      }));
+      const productImages = [];
+      for (let i = 0; i < req.files.length; i++) {
+        const file = req.files[i];
+        // We need a unique name: will use Date.now + random + original name
+        const fileExt = file.originalname.split('.').pop();
+        const imageFileName = `product-${Date.now()}-${Math.round(Math.random()*1e9)}.${fileExt}`;
+        const imagePath = path.join(__dirname, '../../uploads/products', imageFileName);
+        fs.writeFileSync(imagePath, file.buffer);
+        productImages.push({
+          path: `products/${imageFileName}`,
+          alt: `${req.body.name} - Image ${i+1}`,
+          isPrimary: i === 0
+        });
+      }
+      productData.images = productImages;
     }
 
     const product = new Product(productData);
@@ -312,12 +333,19 @@ router.put('/:id', [
 
     // Handle new uploaded images
     if (req.files && req.files.length > 0) {
-      const newImages = req.files.map((file, index) => ({
-        data: file.buffer,
-        contentType: file.mimetype,
-        alt: `${product.name} - Image ${product.images.length + index + 1}`,
-        isPrimary: product.images.length === 0 && index === 0
-      }));
+      const newImages = [];
+      for (let i = 0; i < req.files.length; i++) {
+        const file = req.files[i];
+        const fileExt = file.originalname.split('.').pop();
+        const imageFileName = `product-${Date.now()}-${Math.round(Math.random()*1e9)}.${fileExt}`;
+        const imagePath = path.join(__dirname, '../../uploads/products', imageFileName);
+        fs.writeFileSync(imagePath, file.buffer);
+        newImages.push({
+          path: `products/${imageFileName}`,
+          alt: `${product.name} - Image ${product.images.length + i + 1}`,
+          isPrimary: product.images.length === 0 && i === 0
+        });
+      }
       product.images = [...product.images, ...newImages];
     }
 

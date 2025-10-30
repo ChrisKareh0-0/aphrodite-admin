@@ -34,8 +34,7 @@ const productSchema = new mongoose.Schema({
     required: true
   },
   images: [{
-    data: Buffer,
-    contentType: String,
+    path: String, // filesystem path, e.g. 'products/product-<id>-<index>.png'
     alt: String,
     isPrimary: {
       type: Boolean,

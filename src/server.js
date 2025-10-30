@@ -149,12 +149,10 @@ app.use('/api/images', imageRoutes);
 // Admin panel routes - serve React app for HTML navigation (but not static files)
 // The static middleware above will handle /admin/static/*, /admin/favicon.ico, etc.
 // This catch-all only serves index.html for actual page routes
-app.get('/admin*', (req, res, next) => {
-  // If the request is for a static file (has an extension), skip to next middleware
+app.get(/^((?!\/api\/|\/uploads\/|\/static\/|favicon\.ico).)*$/, (req, res, next) => {
   if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|json)$/)) {
     return next();
   }
-  // Otherwise, serve the React app
   res.sendFile(path.join(__dirname, '../admin-panel/build/index.html'));
 });
 

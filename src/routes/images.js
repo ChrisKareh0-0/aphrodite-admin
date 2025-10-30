@@ -8,8 +8,14 @@ const router = express.Router();
 // @desc    Get product image directly from database
 // @access  Public
 
+
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Serve product images from disk using the path field
 router.get('/products/:productId/:imageId', async (req, res) => {

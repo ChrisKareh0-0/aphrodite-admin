@@ -207,18 +207,14 @@ router.post('/', [
       }
     }
 
-    // Handle uploaded images
+    // Handle uploaded images (store in MongoDB)
     if (req.files && req.files.length > 0) {
       const productImages = [];
       for (let i = 0; i < req.files.length; i++) {
         const file = req.files[i];
-        // We need a unique name: will use Date.now + random + original name
-        const fileExt = file.originalname.split('.').pop();
-        const imageFileName = `product-${Date.now()}-${Math.round(Math.random()*1e9)}.${fileExt}`;
-        const imagePath = path.join(__dirname, '../../uploads/products', imageFileName);
-        fs.writeFileSync(imagePath, file.buffer);
         productImages.push({
-          path: `products/${imageFileName}`,
+          data: file.buffer,
+          contentType: file.mimetype,
           alt: `${req.body.name} - Image ${i+1}`,
           isPrimary: i === 0
         });

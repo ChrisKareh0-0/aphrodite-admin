@@ -46,25 +46,32 @@ router.get('/products/:productId/:imageId', async (req, res) => {
       return res.status(404).json({ error: 'Image not found' });
     }
 
-    // Serve the image from disk
-    const imagePath = path.isAbsolute(image.path)
-      ? image.path
-      : path.join(__dirname, '../../uploads/products', image.path);
-    if (!fs.existsSync(imagePath)) {
-      return res.status(404).json({ error: 'Image file not found on disk' });
+    // Serve image from MongoDB if data exists
+    if (image.data && image.contentType) {
+      res.set('Content-Type', image.contentType);
+      return res.send(image.data);
     }
-    // Set content type based on file extension
-    const ext = path.extname(imagePath).toLowerCase();
-    const mimeTypes = {
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.png': 'image/png',
-      '.gif': 'image/gif',
-      '.webp': 'image/webp',
-      '.svg': 'image/svg+xml',
-    };
-    res.type(mimeTypes[ext] || 'application/octet-stream');
-    return res.sendFile(imagePath);
+    // Fallback: Serve the image from disk if path exists
+    if (image.path) {
+      const imagePath = path.isAbsolute(image.path)
+        ? image.path
+        : path.join(__dirname, '../../uploads/products', image.path);
+      if (!fs.existsSync(imagePath)) {
+        return res.status(404).json({ error: 'Image file not found on disk' });
+      }
+      // Set content type based on file extension
+      const ext = path.extname(imagePath).toLowerCase();
+      const mimeTypes = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.svg': 'image/svg+xml',
+      };
+      res.type(mimeTypes[ext] || 'application/octet-stream');
+      return res.sendFile(imagePath);
+    }
   } catch (error) {
     console.error('Get image error:', error);
     res.status(500).json({ error: 'Server error' });

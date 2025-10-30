@@ -1,3 +1,14 @@
+# ⚠️ Image URLs in Development vs Production
+
+In development, make sure both the storefront and admin panel are configured to use your local backend for images (e.g., `http://localhost:3001`). In production, they will use the deployed backend URL (e.g., `https://aphrodite-admin.onrender.com`).
+
+This is handled automatically if you use the provided config files, but if you see missing images in development, check that:
+
+- The backend is running locally on port 3001
+- The storefront and admin panel are running with `NODE_ENV=development`
+- Your browser is not blocking mixed content (http/https)
+
+If you deploy to a different domain or port, update the backend URL in the config files accordingly.
 # Aphrodite Backend - Deployment Guide
 
 This is the backend API and admin panel for the Aphrodite e-commerce platform.

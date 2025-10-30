@@ -35,7 +35,8 @@ const allowedOrigins = [
   'https://aphrodite-admin.onrender.com',
   'http://localhost:3000',
   'http://localhost:3001',
-  'http://localhost:3002'
+  'http://localhost:3002',
+  'https://aphrodite-storefront-gzs8ymb0e-chriskareh0-0s-projects.vercel.app' 
 ];
 
 // CORS options with proper error handling

@@ -147,17 +147,24 @@ app.use('/api/public', publicRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/images', imageRoutes);
 
+
 // Admin panel routes - serve React app for HTML navigation (but not static files)
 // The static middleware above will handle /admin/static/*, /admin/favicon.ico, etc.
-// This catch-all only serves index.html for actual page routes
-app.get('/admin*', (req, res, next) => {
-  // If the request is for a static file (has an extension), skip to next middleware
-  if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|json)$/)) {
-    return next();
+// This catch-all serves index.html for any non-API, non-static route (for SPA routing)
+app.get(/^\/(admin.*|products.*|categories.*|orders.*|dashboard.*|settings.*|customers.*|login.*|)$/,
+  (req, res, next) => {
+    // If the request is for a static file (has an extension), skip to next middleware
+    if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|json)$/)) {
+      return next();
+    }
+    // If the request is for an API route, skip
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    // Otherwise, serve the React app
+    res.sendFile(path.join(__dirname, '../admin-panel/build/index.html'));
   }
-  // Otherwise, serve the React app
-  res.sendFile(path.join(__dirname, '../admin-panel/build/index.html'));
-});
+);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

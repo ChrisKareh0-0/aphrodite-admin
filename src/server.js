@@ -82,10 +82,14 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/api/uploads', express.static(path.join(__dirname, '../uploads'))); // Add API prefix route for consistency
 
-// Admin panel static files - must come BEFORE the /admin/* route
+
+// Serve static files for /admin and any /admin/* subpath (for deep linking)
 app.use('/admin', express.static(path.join(__dirname, '../admin-panel/build'), {
   index: false // Don't serve index.html for directory requests
 }));
+app.use('/admin/static', express.static(path.join(__dirname, '../admin-panel/build/static')));
+app.use('/admin/favicon.ico', express.static(path.join(__dirname, '../admin-panel/build/favicon.ico')));
+// Also serve at root for legacy/deep-linking
 app.use('/static', express.static(path.join(__dirname, '../admin-panel/build/static')));
 app.use('/favicon.ico', express.static(path.join(__dirname, '../admin-panel/build/favicon.ico')));
 
@@ -148,17 +152,19 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/images', imageRoutes);
 
 
-// Admin panel routes - serve React app for HTML navigation (but not static files)
-// The static middleware above will handle /admin/static/*, /admin/favicon.ico, etc.
-// This catch-all serves index.html for any non-API, non-static route (for SPA routing)
+// Serve React app for non-API, non-static, non-upload routes (SPA routing)
 app.get(/^\/(admin.*|products.*|categories.*|orders.*|dashboard.*|settings.*|customers.*|login.*|)$/,
   (req, res, next) => {
     // If the request is for a static file (has an extension), skip to next middleware
-    if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|json)$/)) {
+    if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|json|map)$/)) {
       return next();
     }
     // If the request is for an API route, skip
     if (req.path.startsWith('/api')) {
+      return next();
+    }
+    // If the request is for an uploaded file, skip
+    if (req.path.startsWith('/uploads') || req.path.startsWith('/api/uploads')) {
       return next();
     }
     // Otherwise, serve the React app

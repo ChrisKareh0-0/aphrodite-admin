@@ -98,6 +98,12 @@ const mongoOptions = {
   serverSelectionTimeoutMS: 30000, // 30 seconds timeout
   socketTimeoutMS: 45000,
   connectTimeoutMS: 30000,
+  maxPoolSize: 10, // Maintain up to 10 socket connections
+  minPoolSize: 2, // Maintain at least 2 connections
+  retryWrites: true,
+  retryReads: true,
+  heartbeatFrequencyMS: 10000, // Check connection health every 10 seconds
+  family: 4 // Use IPv4, skip trying IPv6
 };
 
 // Clean the MongoDB URI - remove any whitespace/newlines that might have been added
@@ -111,23 +117,53 @@ console.log('MONGODB_URI length:', process.env.MONGODB_URI?.length);
 console.log('Cleaned URI length:', mongoUri.length);
 console.log('NODE_ENV:', process.env.NODE_ENV);
 
-mongoose.connect(mongoUri, mongoOptions)
-  .then(async () => {
-    console.log('✅ MongoDB connected successfully');
-    console.log('Database name:', mongoose.connection.name);
-    console.log('Database host:', mongoose.connection.host);
-    // Create default admin user if it doesn't exist
-    const { createDefaultAdmin } = await import('./utils/createAdmin.js');
-    await createDefaultAdmin();
-  })
-  .catch(err => {
-    console.error('❌ MongoDB connection FAILED');
-    console.error('Error name:', err.name);
-    console.error('Error message:', err.message);
-    console.error('Error code:', err.code);
-    console.error('Full error:', JSON.stringify(err, null, 2));
-    // Don't exit - let the app run so we can see the error
-  });
+// MongoDB connection with retry logic
+const connectWithRetry = async (retries = 5) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await mongoose.connect(mongoUri, mongoOptions);
+      console.log('✅ MongoDB connected successfully');
+      console.log('Database name:', mongoose.connection.name);
+      console.log('Database host:', mongoose.connection.host);
+      
+      // Create default admin user if it doesn't exist
+      const { createDefaultAdmin } = await import('./utils/createAdmin.js');
+      await createDefaultAdmin();
+      return;
+    } catch (err) {
+      console.error(`❌ MongoDB connection attempt ${i + 1}/${retries} FAILED`);
+      console.error('Error name:', err.name);
+      console.error('Error message:', err.message);
+      
+      if (i < retries - 1) {
+        const waitTime = Math.min(1000 * Math.pow(2, i), 10000); // Exponential backoff, max 10s
+        console.log(`⏳ Retrying in ${waitTime}ms...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      } else {
+        console.error('❌ All MongoDB connection attempts failed');
+        console.error('Full error:', JSON.stringify(err, null, 2));
+        // Don't exit - let the app run so we can see the error
+      }
+    }
+  }
+};
+
+// Handle MongoDB connection events
+mongoose.connection.on('error', (err) => {
+  console.error('❌ MongoDB connection error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.warn('⚠️ MongoDB disconnected. Attempting to reconnect...');
+  connectWithRetry(3);
+});
+
+mongoose.connection.on('reconnected', () => {
+  console.log('✅ MongoDB reconnected');
+});
+
+// Start connection
+connectWithRetry();
 
 // Import routes
 import authRoutes from './routes/auth.js';

@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { Upload, Trash2, Image } from 'lucide-react';
 import { api } from '../services/api';
+import { getImageUrl } from '../config';
 
 const HeroManager = () => {
   const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: heroData, isLoading } = useQuery('hero', () => api.settings.getHero());
@@ -14,6 +16,9 @@ const HeroManager = () => {
     {
       onSuccess: () => {
         queryClient.invalidateQueries('hero');
+        // clear preview and selection
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
         setSelectedFile(null);
       },
     }
@@ -22,11 +27,31 @@ const HeroManager = () => {
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
+      // keep the file locally and show a preview; only upload when Submit is clicked
       setSelectedFile(file);
-      const formData = new FormData();
-      formData.append('hero', file);
-      uploadMutation.mutate(formData);
+      try {
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
+      } catch (e) {
+        console.error('Failed to create preview URL', e);
+        setPreviewUrl(null);
+      }
     }
+  };
+
+  const handleCancelSelection = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setPreviewUrl(null);
+    setSelectedFile(null);
+  };
+
+  const handleSubmit = () => {
+    if (!selectedFile) return;
+    const formData = new FormData();
+    formData.append('hero', selectedFile);
+    uploadMutation.mutate(formData);
   };
 
   if (isLoading) {
@@ -49,14 +74,28 @@ const HeroManager = () => {
       </div>
 
       <div className="mt-8">
-        {/* Current Hero Image */}
+        {/* Current Hero Image / Preview */}
         <div className="mb-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Current Hero Image</h3>
           <div className="relative">
-            {heroData?.imageUrl ? (
+            {previewUrl ? (
               <div className="relative">
                 <img
-                  src={heroData.imageUrl}
+                  src={previewUrl}
+                  alt="Hero preview"
+                  className="w-full h-64 object-cover rounded-lg"
+                />
+                <button
+                  onClick={handleCancelSelection}
+                  className="absolute top-2 right-2 p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : heroData?.imageUrl ? (
+              <div className="relative">
+                <img
+                  src={getImageUrl(heroData.imageUrl)}
                   alt="Hero"
                   className="w-full h-64 object-cover rounded-lg"
                 />
@@ -96,11 +135,26 @@ const HeroManager = () => {
               />
             </label>
           </div>
-          {uploadMutation.isLoading && (
-            <div className="mt-4 text-center text-sm text-gray-500">
-              Uploading image...
-            </div>
-          )}
+          {/* Submit / Cancel controls for the selected file */}
+          <div className="mt-4 flex items-center gap-3">
+            <button
+              onClick={handleSubmit}
+              disabled={!selectedFile || uploadMutation.isLoading}
+              className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50"
+            >
+              Submit
+            </button>
+            <button
+              onClick={handleCancelSelection}
+              disabled={!selectedFile || uploadMutation.isLoading}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            {uploadMutation.isLoading && (
+              <div className="text-sm text-gray-500">Uploading image...</div>
+            )}
+          </div>
         </div>
       </div>
     </div>

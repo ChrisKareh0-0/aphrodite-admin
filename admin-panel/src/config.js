@@ -2,7 +2,8 @@
 export const API_URL = 'https://aphrodite-admin.onrender.com/api';
 
 // Always use production backend for images
-export const IMAGE_BASE_URL = 'https://aphrodite-admin.onrender.com/api';
+// Serve images from the root uploads path on the backend
+export const IMAGE_BASE_URL = 'https://aphrodite-admin.onrender.com';
 
 // Image helpers
 export const getImageUrl = (path) => {

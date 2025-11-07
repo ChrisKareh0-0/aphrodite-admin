@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { Upload, Trash2, Image } from 'lucide-react';
 import { api } from '../services/api';
 import { getImageUrl } from '../config';
+import toast from 'react-hot-toast';
 
 const HeroManager = () => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -20,6 +21,10 @@ const HeroManager = () => {
         if (previewUrl) URL.revokeObjectURL(previewUrl);
         setPreviewUrl(null);
         setSelectedFile(null);
+        toast.success('Hero updated');
+      },
+      onError: (error) => {
+        toast.error(error?.response?.data?.error || 'Failed to update hero');
       },
     }
   );
@@ -52,6 +57,17 @@ const HeroManager = () => {
     const formData = new FormData();
     formData.append('hero', selectedFile);
     uploadMutation.mutate(formData);
+  };
+
+  const handleDelete = () => {
+    // Send a form with imageUrl set to 'null' so backend clears the image
+    const formData = new FormData();
+    formData.append('imageUrl', 'null');
+    uploadMutation.mutate(formData, {
+      onSuccess: () => {
+        toast.success('Hero removed');
+      },
+    });
   };
 
   if (isLoading) {
@@ -100,7 +116,7 @@ const HeroManager = () => {
                   className="w-full h-64 object-cover rounded-lg"
                 />
                 <button
-                  onClick={() => uploadMutation.mutate({ imageUrl: null })}
+                  onClick={handleDelete}
                   className="absolute top-2 right-2 p-2 bg-red-100 rounded-full hover:bg-red-200 transition-colors"
                 >
                   <Trash2 className="h-5 w-5 text-red-600" />

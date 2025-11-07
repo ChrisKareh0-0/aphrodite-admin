@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { api } from '../services/api';
+import { getImageUrl } from '../config';
 import toast from 'react-hot-toast';
 import { Plus, Edit, Trash2, Eye, EyeOff, Search, Package } from 'lucide-react';
 
@@ -169,11 +170,26 @@ const Products = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           {product.images?.[0] ? (
-                            <img
-                              className="h-10 w-10 rounded object-cover"
-                              src={product.images?.[0]?.path ? `/uploads/${product.images[0].path}` : '/placeholder.svg'}
-                              alt={product.name}
-                            />
+                            (() => {
+                              const img0 = product.images[0];
+                              let src = '/placeholder.svg';
+                              if (typeof img0 === 'string') {
+                                src = getImageUrl(img0);
+                              } else if (img0 && img0.path) {
+                                // images saved with path like 'products/filename'
+                                src = getImageUrl(`/uploads/${img0.path}`);
+                              } else if (img0 && img0.url) {
+                                src = getImageUrl(img0.url);
+                              }
+                              return (
+                                <img
+                                  className="h-10 w-10 rounded object-cover"
+                                  src={src}
+                                  alt={product.name}
+                                  onError={(e) => { const t = e.target; if (t && t instanceof HTMLImageElement) { t.src = '/placeholder.svg'; } }}
+                                />
+                              );
+                            })()
                           ) : (
                             <div className="h-10 w-10 rounded bg-gray-200 flex items-center justify-center">
                               <Package className="h-5 w-5 text-gray-400" />

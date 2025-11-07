@@ -69,7 +69,15 @@ router.get('/', [
     }
 
     if (req.query.search) {
-      filter.$text = { $search: req.query.search };
+      // Support regex search across common text fields as a fallback when text indexes
+      // are not present. This improves admin search behavior for names, SKUs, and descriptions.
+      const s = req.query.search;
+      filter.$or = [
+        { name: { $regex: s, $options: 'i' } },
+        { sku: { $regex: s, $options: 'i' } },
+        { shortDescription: { $regex: s, $options: 'i' } },
+        { description: { $regex: s, $options: 'i' } }
+      ];
     }
 
     const products = await Product.find(filter)

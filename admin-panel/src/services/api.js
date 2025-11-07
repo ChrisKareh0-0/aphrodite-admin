@@ -116,7 +116,16 @@ export const api = {
 
   // Products endpoints
   products: {
-    getAll: (params) => apiClient.get('/products', { params }),
+    getAll: (params) => {
+      console.log('API: Fetching products with params:', params);
+      return apiClient.get('/products', { params }).then(response => {
+        console.log('API: Products response:', response.data?.products?.length ?? response.data);
+        return response;
+      }).catch(error => {
+        console.error('API: Products fetch error:', error.response?.status, error.response?.data);
+        throw error;
+      });
+    },
     getById: (id) => apiClient.get(`/products/${id}`),
     create: (data) => {
       const formData = new FormData();

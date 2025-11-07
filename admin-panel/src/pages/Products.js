@@ -9,18 +9,20 @@ import { Plus, Edit, Trash2, Eye, EyeOff, Search, Package } from 'lucide-react';
 const Products = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery(
-    ['products', { page: currentPage, search, status: statusFilter, limit: 10 }],
+    ['products', currentPage, search, statusFilter],
     () => api.products.getAll({
       page: currentPage,
       search: search || undefined,
       status: statusFilter !== 'all' ? statusFilter : undefined,
       limit: 10
-    })
+    }),
+    { keepPreviousData: true }
   );
 
   const deleteMutation = useMutation(api.products.delete, {
@@ -56,8 +58,18 @@ const Products = () => {
     toggleStatusMutation.mutate(id);
   };
 
-  const handleSearch = (e) => {
-    setSearch(e.target.value);
+  const handleSearchInput = (e) => {
+    setSearchInput(e.target.value);
+  };
+
+  const submitSearch = () => {
+    setSearch(searchInput.trim());
+    setCurrentPage(1);
+  };
+
+  const clearSearch = () => {
+    setSearchInput('');
+    setSearch('');
     setCurrentPage(1);
   };
 
@@ -90,16 +102,33 @@ const Products = () => {
       {/* Filters */}
       <div className="bg-white p-4 rounded-lg shadow space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={search}
-              onChange={handleSearch}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </div>
+            <div className="relative flex items-center space-x-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search products... (press Enter)"
+                  value={searchInput}
+                  onChange={handleSearchInput}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submitSearch(); } }}
+                  className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+              <div className="flex items-center">
+                <button
+                  onClick={submitSearch}
+                  className="px-3 py-2 bg-indigo-600 text-white rounded-md text-sm mr-2"
+                >
+                  Search
+                </button>
+                <button
+                  onClick={clearSearch}
+                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md text-sm"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
 
           <div className="flex space-x-2">
             {['all', 'active', 'inactive'].map((status) => (
@@ -172,21 +201,16 @@ const Products = () => {
                           {product.images?.[0] ? (
                             (() => {
                               const img0 = product.images[0];
-                              let src = '/placeholder.svg';
-                              if (typeof img0 === 'string') {
-                                src = getImageUrl(img0);
-                              } else if (img0 && img0.path) {
-                                // images saved with path like 'products/filename'
-                                src = getImageUrl(`/uploads/${img0.path}`);
-                              } else if (img0 && img0.url) {
-                                src = getImageUrl(img0.url);
-                              }
+                              // Always request the thumbnail from the images API index 0 (most robust)
+                              const thumbnailSrc = getImageUrl(`/images/products/${product._id}/0`);
+                              try { console.debug('Product thumbnail debug:', { productId: product._id, rawImage: img0, thumbnailSrc }); } catch (e) {}
+
                               return (
                                 <img
                                   className="h-10 w-10 rounded object-cover"
-                                  src={src}
+                                  src={thumbnailSrc}
                                   alt={product.name}
-                                  onError={(e) => { const t = e.target; if (t && t instanceof HTMLImageElement) { t.src = '/placeholder.svg'; } }}
+                                  onError={(e) => { const t = e.currentTarget; if (t) { t.src = getImageUrl('/images/placeholder.svg'); } }}
                                 />
                               );
                             })()

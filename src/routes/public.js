@@ -49,7 +49,7 @@ router.get('/products', [
     const filter = { isActive: true };
 
     if (req.query.category) {
-      // Find category by slug or ID
+      // Find category by slug or ID - must be active
       const isValidObjectId = mongoose.Types.ObjectId.isValid(req.query.category);
       const categoryQuery = isValidObjectId
         ? {
@@ -67,7 +67,23 @@ router.get('/products', [
       const category = await Category.findOne(categoryQuery);
       if (category) {
         filter.category = category._id;
+      } else {
+        // Category not found or is inactive - return no products
+        return res.json({
+          products: [],
+          pagination: {
+            current: page,
+            pages: 0,
+            total: 0,
+            limit
+          }
+        });
       }
+    } else {
+      // When showing ALL products, only show products from ACTIVE categories
+      const activeCategories = await Category.find({ isActive: true }).select('_id');
+      const activeCategoryIds = activeCategories.map(cat => cat._id);
+      filter.category = { $in: activeCategoryIds };
     }
 
     if (req.query.search) {
@@ -265,6 +281,16 @@ router.get('/products/:slug/related', async (req, res) => {
     }
 
     // Get products from the same category, excluding the current product
+    // Only show products from active categories
+    const categoryActive = await Category.findOne({
+      _id: product.category,
+      isActive: true
+    });
+
+    if (!categoryActive) {
+      return res.json({ products: [] }); // Don't show related products if category is inactive
+    }
+
     const relatedProducts = await Product.find({
       _id: { $ne: product._id },
       category: product.category,

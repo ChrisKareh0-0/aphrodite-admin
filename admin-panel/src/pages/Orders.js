@@ -13,14 +13,26 @@ const Orders = () => {
   const { data: ordersData = { orders: [], pagination: {} }, isLoading, isError } = useQuery(
     ['orders', currentPage, pageSize],
     async () => {
+      console.log('Fetching orders with page:', currentPage, 'limit:', pageSize);
       const res = await api.orders.getAll({ page: currentPage, limit: pageSize });
-      // Support both paginated and non-paginated response
-      return res.data.pagination ? res.data : { orders: res.data.orders || res.data, pagination: {} };
+      console.log('Orders API Response:', res.data);
+
+      // The API response is directly in res.data (no extra wrapper)
+      const responseData = res.data || {};
+      const orders = responseData.orders || [];
+      const pagination = responseData.pagination || {};
+
+      console.log('Parsed orders:', orders.length, 'Pagination:', pagination);
+
+      return {
+        orders,
+        pagination
+      };
     }
   );
 
-  const orders = ordersData.orders || [];
-  const pagination = ordersData.pagination || {};
+  const orders = ordersData?.orders || [];
+  const pagination = ordersData?.pagination || {};
 
   const updateOrderStatus = async (orderId, status) => {
     try {
@@ -64,6 +76,16 @@ const Orders = () => {
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-6">Orders</h1>
+
+      {/* Debug Info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mb-4 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+          <details>
+            <summary>Debug: Pagination Data</summary>
+            <pre>{JSON.stringify({ orders: orders.length, pagination }, null, 2)}</pre>
+          </details>
+        </div>
+      )}
       <div className="overflow-x-auto bg-white rounded-lg shadow">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -146,56 +168,73 @@ const Orders = () => {
       </div>
 
       {/* Pagination Controls */}
-      {pagination.totalPages && pagination.totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
-          <div className="text-sm text-gray-600">
-            Page {pagination.page} of {pagination.totalPages} ({pagination.total} total orders)
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={!pagination.hasPrev}
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
-            >
-              Previous
-            </button>
-            <div className="flex items-center gap-2">
-              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(page => (
+      {(pagination.totalPages || pagination.total > pageSize) && (
+        <div className="mt-6 space-y-4">
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="text-sm text-gray-700">
+                <strong>
+                  Page {pagination.page || 1} of {pagination.totalPages || 1}
+                </strong>
+                {pagination.total && ` (${pagination.total} total orders)`}
+              </div>
+
+              <div className="flex gap-2 flex-wrap">
                 <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`px-3 py-2 rounded-md ${
-                    page === pagination.page
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                  }`}
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={pagination.page === 1}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 text-sm"
                 >
-                  {page}
+                  ← Previous
                 </button>
-              ))}
+
+                {pagination.totalPages && pagination.totalPages > 1 && (
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(pagination.totalPages, 5) }, (_, i) => {
+                      const page = pagination.page ? pagination.page - 2 + i : i + 1;
+                      return page > 0 && page <= pagination.totalPages ? page : null;
+                    }).filter(Boolean).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-1 rounded text-sm ${
+                          page === pagination.page
+                            ? 'bg-indigo-600 text-white font-bold'
+                            : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages || prev, prev + 1))}
+                  disabled={pagination.page === pagination.totalPages}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 text-sm"
+                >
+                  Next →
+                </button>
+              </div>
+
+              <div className="text-sm">
+                <label className="text-gray-700 mr-2">Items per page:</label>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(parseInt(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="px-2 py-1 border border-gray-300 rounded-md text-sm"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
             </div>
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
-              disabled={!pagination.hasNext}
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
-            >
-              Next
-            </button>
-          </div>
-          <div className="text-sm text-gray-600">
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(parseInt(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="px-2 py-1 border border-gray-300 rounded-md"
-            >
-              <option value={5}>5 per page</option>
-              <option value={10}>10 per page</option>
-              <option value={20}>20 per page</option>
-              <option value={50}>50 per page</option>
-            </select>
           </div>
         </div>
       )}

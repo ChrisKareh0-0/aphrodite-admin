@@ -13,13 +13,50 @@ router.get('/', auth, async (req, res) => {
       .populate('items.product', 'name price images')
       .sort({ createdAt: -1 });
     console.log(`Found ${orders.length} orders`);
-    if (!orders || orders.length === 0) {
-      return res.json({ orders: '', message: 'No orders found' });
-    }
     res.json({ orders });
   } catch (err) {
     console.error('Error fetching orders:', err);
     res.status(500).json({ error: 'Error fetching orders' });
+  }
+});
+
+// Get all customers (Admin) - MUST be before /:id route
+router.get('/customers/all', auth, async (req, res) => {
+  try {
+    console.log('Fetching all customers...');
+
+    // Aggregate orders to get unique customers with their stats
+    const customers = await Order.aggregate([
+      {
+        $group: {
+          _id: '$customer.email',
+          name: { $first: '$customer.name' },
+          email: { $first: '$customer.email' },
+          phone: { $first: '$customer.phone' },
+          address: { $first: '$customer.address' },
+          totalOrders: { $sum: 1 },
+          totalSpent: {
+            $sum: {
+              $cond: [
+                { $in: ['$status', ['cancelled', 'refunded']] },
+                0,
+                '$total'
+              ]
+            }
+          },
+          lastOrderDate: { $max: '$createdAt' }
+        }
+      },
+      {
+        $sort: { lastOrderDate: -1 }
+      }
+    ]);
+
+    console.log(`Found ${customers.length} customers`);
+    res.json({ customers });
+  } catch (err) {
+    console.error('Error fetching customers:', err);
+    res.status(500).json({ error: 'Error fetching customers' });
   }
 });
 
@@ -167,46 +204,6 @@ router.delete('/:id', auth, async (req, res) => {
   } catch (err) {
     console.error('Error deleting order:', err);
     res.status(500).json({ error: 'Error deleting order' });
-  }
-});
-
-// Get all customers (Admin)
-router.get('/customers/all', auth, async (req, res) => {
-  try {
-    console.log('Fetching all customers...');
-
-    // Aggregate orders to get unique customers with their stats
-    const customers = await Order.aggregate([
-      {
-        $group: {
-          _id: '$customer.email',
-          name: { $first: '$customer.name' },
-          email: { $first: '$customer.email' },
-          phone: { $first: '$customer.phone' },
-          address: { $first: '$customer.address' },
-          totalOrders: { $sum: 1 },
-          totalSpent: {
-            $sum: {
-              $cond: [
-                { $in: ['$status', ['cancelled', 'refunded']] },
-                0,
-                '$total'
-              ]
-            }
-          },
-          lastOrderDate: { $max: '$createdAt' }
-        }
-      },
-      {
-        $sort: { lastOrderDate: -1 }
-      }
-    ]);
-
-    console.log(`Found ${customers.length} customers`);
-    res.json({ customers });
-  } catch (err) {
-    console.error('Error fetching customers:', err);
-    res.status(500).json({ error: 'Error fetching customers' });
   }
 });
 

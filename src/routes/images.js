@@ -37,12 +37,6 @@ router.get('/products/:productId/:imageId', async (req, res) => {
       image = product.images[Number(req.params.imageId)];
     }
     if (!image) {
-      // Fallback to placeholder
-      const placeholderPath = path.join(__dirname, '../../uploads/placeholder.svg');
-      if (fs.existsSync(placeholderPath)) {
-        res.type('image/svg+xml');
-        return res.sendFile(placeholderPath);
-      }
       return res.status(404).json({ error: 'Image not found' });
     }
 

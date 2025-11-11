@@ -210,7 +210,6 @@ const Products = () => {
                                   className="h-10 w-10 rounded object-cover"
                                   src={thumbnailSrc}
                                   alt={product.name}
-                                  onError={(e) => { const t = e.currentTarget; if (t) { t.src = getImageUrl('/images/placeholder.svg'); } }}
                                 />
                               );
                             })()

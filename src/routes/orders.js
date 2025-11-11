@@ -5,15 +5,39 @@ import Product from '../models/Product.js';
 
 const router = express.Router();
 
-// Get all orders (Admin)
+// Get all orders (Admin) with pagination
 router.get('/', auth, async (req, res) => {
   try {
-    console.log('Fetching all orders...');
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    console.log(`Fetching orders - Page: ${page}, Limit: ${limit}`);
+
+    // Fetch orders with pagination and optimizations
     const orders = await Order.find()
       .populate('items.product', 'name price images')
-      .sort({ createdAt: -1 });
-    console.log(`Found ${orders.length} orders`);
-    res.json({ orders });
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .skip(skip)
+      .lean();
+
+    // Get total count for pagination
+    const total = await Order.countDocuments();
+    const totalPages = Math.ceil(total / limit);
+
+    console.log(`Found ${orders.length} orders (${total} total)`);
+    res.json({
+      orders,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    });
   } catch (err) {
     console.error('Error fetching orders:', err);
     res.status(500).json({ error: 'Error fetching orders' });

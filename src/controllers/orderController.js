@@ -104,12 +104,17 @@ const createOrder = async (req, res) => {
       });
     }
 
-    // Validate and calculate totals
+    // Validate and calculate totals - use batch query to avoid N+1
     let subtotal = 0;
     const validatedItems = [];
 
+    // Fetch all products at once instead of one by one (avoids N+1 query problem)
+    const productIds = items.map(item => item.product);
+    const products = await Product.find({ _id: { $in: productIds } });
+    const productMap = new Map(products.map(p => [p._id.toString(), p]));
+
     for (const item of items) {
-      const product = await Product.findById(item.product);
+      const product = productMap.get(item.product.toString());
       if (!product) {
         return res.status(400).json({
           success: false,

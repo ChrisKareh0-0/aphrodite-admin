@@ -137,6 +137,28 @@ router.post('/create', async (req, res) => {
     await order.save();
     console.log(`Backend: Order saved successfully! Order Number: ${order.orderNumber}, ID: ${order._id}`);
 
+    // Deduct stock for each item
+    console.log('Backend: Deducting stock for items...');
+    for (const item of items) {
+      const updateResult = await Product.findOneAndUpdate(
+        {
+          _id: item.product,
+          'stock.color': item.color,
+          'stock.size': item.size
+        },
+        {
+          $inc: { 'stock.$.quantity': -item.quantity }
+        },
+        { new: true }
+      );
+
+      if (!updateResult) {
+        console.error(`Failed to update stock for product ${item.product}, color: ${item.color}, size: ${item.size}`);
+        throw new Error(`Failed to update stock for product ${item.product}`);
+      }
+      console.log(`Stock updated for product ${item.product}: -${item.quantity} units (${item.color}, ${item.size})`);
+    }
+
     res.status(201).json({
       success: true,
       order: {

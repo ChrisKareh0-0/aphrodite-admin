@@ -167,7 +167,7 @@ const createOrder = async (req, res) => {
 
     // Update product stock for specific color and size
     for (const item of validatedItems) {
-      await Product.findOneAndUpdate(
+      const updateResult = await Product.findOneAndUpdate(
         {
           _id: item.product,
           'stock.color': item.color,
@@ -175,8 +175,15 @@ const createOrder = async (req, res) => {
         },
         {
           $inc: { 'stock.$.quantity': -item.quantity }
-        }
+        },
+        { new: true }
       );
+
+      // If update failed, log error and throw
+      if (!updateResult) {
+        console.error(`Failed to update stock for product ${item.product}, color: ${item.color}, size: ${item.size}`);
+        throw new Error(`Failed to update stock for product ${item.product}`);
+      }
     }
 
     const populatedOrder = await Order.findById(order._id)
